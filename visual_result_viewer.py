@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-소 감지 결과 시각화 뷰어
-16마리 감지 결과를 시각적으로 확인
-"""
+
 
 import cv2
 import numpy as np
@@ -31,27 +28,27 @@ class VisualCattleDetector:
     def detect_and_visualize(self, image_path):
         """감지하고 시각화"""
         
-        print(f"🔍 이미지 분석 및 시각화 시작: {image_path}")
+        print(f"🔍 Starting image analysis and visualization: {image_path}")
         
         # 이미지 로드
         original_image = cv2.imread(image_path)
         if original_image is None:
-            print("❌ 이미지를 로드할 수 없습니다!")
+            print("❌ Unable to load image!")
             return None
         
         h, w = original_image.shape[:2]
-        print(f"📏 이미지 크기: {w}x{h}")
+        print(f"📏 Image size: {w}x{h}")
         
         all_detections = []
         
         try:
             # 1. 전체 이미지 분석
-            print("📍 전체 이미지 분석 중...")
-            full_detections = self._detect_in_region(image_path, 0, 0, "전체")
+            print("📍 Analyzing full image...")
+            full_detections = self._detect_in_region(image_path, 0, 0, "full")
             all_detections.extend(full_detections)
             
             # 2. 9등분 격자 분석 (가장 효과적)
-            print("📍 9등분 격자 분석 중...")
+            print("📍 Analyzing 9-grid sections...")
             for row in range(3):
                 for col in range(3):
                     rx = col * (w // 3)
@@ -70,18 +67,18 @@ class VisualCattleDetector:
                     
                     temp_path = f"temp_visual_{row}_{col}.jpg"
                     cv2.imwrite(temp_path, roi)
-                    grid_detections = self._detect_in_region(temp_path, roi_x1, roi_y1, f"격자{row+1}-{col+1}")
+                    grid_detections = self._detect_in_region(temp_path, roi_x1, roi_y1, f"grid{row+1}-{col+1}")
                     all_detections.extend(grid_detections)
                     try:
                         os.remove(temp_path)
                     except:
                         pass
             
-            print(f"📊 원시 감지: {len(all_detections)}개")
+            print(f"📊 Raw detections: {len(all_detections)} items")
             
             # 3. 스마트 중복 제거
             final_detections = self._smart_nms_with_regions(all_detections)
-            print(f"🎯 최종 감지: {len(final_detections)}마리")
+            print(f"🎯 Final detections: {len(final_detections)} cattle")
             
             # 4. 시각화
             result_image = self._create_visualization(original_image, final_detections)
@@ -89,7 +86,7 @@ class VisualCattleDetector:
             return result_image, final_detections
             
         except Exception as e:
-            print(f"❌ 오류: {e}")
+            print(f"❌ Error: {e}")
             return original_image, []
     
     def _detect_in_region(self, image_path, offset_x=0, offset_y=0, region_name=""):
@@ -119,7 +116,7 @@ class VisualCattleDetector:
                         if pred.get('class', '').lower() == 'cow':
                             pred['x'] += offset_x
                             pred['y'] += offset_y
-                            pred['region'] = f"{region_name}(백업)"
+                            pred['region'] = f"{region_name}(backup)"
                             detections.append(pred)
                     break
                 except:
@@ -175,7 +172,7 @@ class VisualCattleDetector:
                 if iou > threshold:
                     is_duplicate = True
                     if (detection['confidence'] > existing['confidence'] * 1.2 or
-                        '전체' in detection.get('region', '') and '격자' in existing.get('region', '')):
+                        'full' in detection.get('region', '') and 'grid' in existing.get('region', '')):
                         final_detections.remove(existing)
                         final_detections.append(detection)
                     break
@@ -190,13 +187,13 @@ class VisualCattleDetector:
         aspect_ratio = detection['width'] / detection['height']
         
         if aspect_ratio > 2.5:
-            return "누워있음"
+            return "lying"
         elif aspect_ratio > 1.8:
-            return "앉아있음"
+            return "sitting"
         elif detection['y'] > 400:  # 이미지 하단
-            return "먹고있음"
+            return "eating"
         else:
-            return "서있음"
+            return "standing"
     
     def _create_visualization(self, original_image, detections):
         """시각화 이미지 생성"""
@@ -243,12 +240,12 @@ class VisualCattleDetector:
             cv2.putText(result_image, str(i+1), (center_x-8, center_y+5), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
             
-            # 간단한 라벨 (영어로)
+            # Simple label (English)
             behavior_map = {
-                "누워있음": "Lying",
-                "앉아있음": "Sitting", 
-                "먹고있음": "Eating",
-                "서있음": "Standing"
+                "lying": "Lying",
+                "sitting": "Sitting", 
+                "eating": "Eating",
+                "standing": "Standing"
             }
             behavior = self._estimate_behavior(detection)
             behavior_en = behavior_map.get(behavior, "Unknown")
@@ -261,8 +258,8 @@ class VisualCattleDetector:
             cv2.putText(result_image, label, (x1+2, y1-5), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
         
-        # 작은 통계 정보 (우측 하단)
-        behavior_map = {"누워있음": "Lying", "앉아있음": "Sitting", "먹고있음": "Eating", "서있음": "Standing"}
+        # Small statistics info (bottom right)
+        behavior_map = {"lying": "Lying", "sitting": "Sitting", "eating": "Eating", "standing": "Standing"}
         behaviors = [self._estimate_behavior(d) for d in detections]
         behavior_counts = {}
         for behavior in behaviors:
@@ -285,33 +282,33 @@ class VisualCattleDetector:
         return result_image
 
 def main():
-    print("🐄 소 감지 결과 시각화 프로그램")
+    print("🐄 Cattle Detection Visualization Program")
     print("=" * 50)
     
     detector = VisualCattleDetector()
     image_path = "images/cow_test.jpg"
     
-    print("🔄 감지 및 시각화 중...")
+    print("🔄 Detecting and visualizing...")
     start_time = time.time()
     
     result_image, detections = detector.detect_and_visualize(image_path)
     
     end_time = time.time()
-    print(f"⏱️ 처리 시간: {end_time - start_time:.2f}초")
+    print(f"⏱️ Processing time: {end_time - start_time:.2f} seconds")
     
     if result_image is not None:
         # 결과 저장
         output_path = "cattle_detection_visualization.jpg"
         cv2.imwrite(output_path, result_image)
-        print(f"💾 결과 저장: {output_path}")
+        print(f"💾 Result saved: {output_path}")
         
         # 화면에 표시
-        print(f"\n🎉 {len(detections)}마리 감지 완료!")
-        print("🖼️ 시각화 창이 열립니다...")
-        print("📝 조작법:")
-        print("  - ESC: 프로그램 종료")
-        print("  - SPACE: 다음 보기")
-        print("  - 아무 키: 창 닫기")
+        print(f"\n🎉 {len(detections)} cattle detected successfully!")
+        print("🖼️ Visualization window opening...")
+        print("📝 Controls:")
+        print("  - ESC: Exit program")
+        print("  - SPACE: View next")
+        print("  - Any key: Close window")
         
         # 창 크기 조정 (큰 이미지인 경우)
         h, w = result_image.shape[:2]
@@ -335,16 +332,16 @@ def main():
                         scale = min(1200/w_orig, 800/h_orig)
                         new_w, new_h = int(w_orig*scale), int(h_orig*scale)
                         original = cv2.resize(original, (new_w, new_h))
-                    cv2.imshow('원본 이미지', original)
+                    cv2.imshow('Original Image', original)
                     cv2.waitKey(0)
-                    cv2.destroyWindow('원본 이미지')
+                    cv2.destroyWindow('Original Image')
             else:
                 break
         
         cv2.destroyAllWindows()
-        print("✅ 프로그램 종료")
+        print("✅ Program terminated")
     else:
-        print("❌ 시각화 실패")
+        print("❌ Visualization failed")
 
 if __name__ == "__main__":
     main()

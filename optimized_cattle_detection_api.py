@@ -131,7 +131,7 @@ class OptimizedCattleDetector:
             }
             
         except Exception as e:
-            print(f"감지 오류: {e}")
+            print(f"Detection error: {e}")
             return {'cows': [], 'alarms': [], 'detection_summary': {'error': str(e)}}
     
     def _detect_in_region(self, image_path, offset_x=0, offset_y=0, region_name=""):
@@ -233,13 +233,13 @@ class OptimizedCattleDetector:
         aspect_ratio = detection['width'] / detection['height']
         
         if aspect_ratio > 2.5:
-            return "누워있음"
+            return "lying"
         elif aspect_ratio > 1.8:
-            return "앉아있음"
-        elif detection['y'] > 400:  # 이미지 하단
-            return "먹고있음"
+            return "sitting"
+        elif detection['y'] > 400:  # image bottom
+            return "eating"
         else:
-            return "서있음"
+            return "standing"
     
     def _check_individual_alarm(self, cow):
         """개별 소 알람 체크 (현실적 기준)"""
@@ -250,7 +250,7 @@ class OptimizedCattleDetector:
             return {
                 'type': 'abnormal_posture',
                 'cow_id': cow['id'],
-                'message': f"소 #{cow['id']}: 뒤집어졌거나 쓰러진 상태 감지",
+                'message': f"Cow #{cow['id']}: Detected in overturned or collapsed state",
                 'severity': 'HIGH',
                 'coordinates': cow['bbox'],
                 'confidence': cow['confidence']
@@ -261,7 +261,7 @@ class OptimizedCattleDetector:
             return {
                 'type': 'seizure_posture',
                 'cow_id': cow['id'],
-                'message': f"소 #{cow['id']}: 발작 증상이나 극도로 웅크린 상태",
+                'message': f"Cow #{cow['id']}: Seizure symptoms or extremely crouched state",
                 'severity': 'HIGH',
                 'coordinates': cow['bbox'],
                 'confidence': cow['confidence']
@@ -272,7 +272,7 @@ class OptimizedCattleDetector:
             return {
                 'type': 'abnormal_shape',
                 'cow_id': cow['id'],
-                'message': f"소 #{cow['id']}: 비정상적인 자세 (다리를 들거나 이상한 형태)",
+                'message': f"Cow #{cow['id']}: Abnormal posture (raised legs or unusual shape)",
                 'severity': 'MEDIUM',
                 'coordinates': cow['bbox'],
                 'confidence': cow['confidence']
@@ -288,7 +288,7 @@ def health_check():
     """서버 상태 확인"""
     return jsonify({
         'status': 'OK',
-        'message': '최적화된 소 감지 API 서버 정상 작동',
+        'message': 'Optimized cattle detection API server running normally',
         'version': '2.0_optimized',
         'primary_model': detector.primary_model,
         'timestamp': time.time()
@@ -301,7 +301,7 @@ def detect_from_image():
         data = request.get_json()
         
         if 'image' not in data:
-            return jsonify({'error': 'image 필드가 필요합니다'}), 400
+            return jsonify({'error': 'image field is required'}), 400
         
         # Base64 디코딩
         image_data = base64.b64decode(data['image'])
@@ -349,11 +349,11 @@ def detect_from_file():
     """파일 업로드에서 소 감지"""
     try:
         if 'file' not in request.files:
-            return jsonify({'error': 'file 필드가 필요합니다'}), 400
+            return jsonify({'error': 'file field is required'}), 400
         
         file = request.files['file']
         if file.filename == '':
-            return jsonify({'error': '파일이 선택되지 않았습니다'}), 400
+            return jsonify({'error': 'No file selected'}), 400
         
         # 임시 파일로 저장
         with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
@@ -398,13 +398,13 @@ def get_model_status():
         'primary_model': detector.primary_model,
         'backup_models': detector.backup_models,
         'algorithm': 'region_based_detection',
-        'performance': '24+ 마리 감지 보장',
+        'performance': '24+ cattle detection guaranteed',
         'features': [
-            '전체 이미지 분석',
-            '4등분 영역 분석', 
-            '9등분 격자 분석',
-            '스마트 중복 제거',
-            '현실적 알람 기준'
+            'Full image analysis',
+            '4-quadrant area analysis', 
+            '9-grid section analysis',
+            'Smart duplicate removal',
+            'Realistic alarm criteria'
         ]
     })
 
@@ -418,7 +418,7 @@ def change_primary_model():
             
         return jsonify({
             'success': True,
-            'message': '모델이 변경되었습니다',
+            'message': 'Model changed successfully',
             'current_model': detector.primary_model
         })
         
@@ -429,14 +429,14 @@ def change_primary_model():
         }), 500
 
 if __name__ == '__main__':
-    print("🚀 최적화된 소 감지 API 서버 시작...")
-    print("🎯 성능: 24+ 마리 감지 보장 (region_based_detection)")
-    print("📍 엔드포인트:")
-    print("  GET  /health - 서버 상태 확인")
-    print("  POST /detect/image - Base64 이미지 감지")
-    print("  POST /detect/file - 파일 업로드 감지")
-    print("  GET  /models/status - 모델 상태")
-    print("  POST /config/model - 모델 변경")
-    print("\n🎉 백엔드 개발자용 최적화 완료!")
+    print("🚀 Starting optimized cattle detection API server...")
+    print("🎯 Performance: 24+ cattle detection guaranteed (region_based_detection)")
+    print("📍 Endpoints:")
+    print("  GET  /health - Server health check")
+    print("  POST /detect/image - Base64 image detection")
+    print("  POST /detect/file - File upload detection")
+    print("  GET  /models/status - Model status")
+    print("  POST /config/model - Model configuration")
+    print("\n🎉 Backend developer optimization complete!")
     
     app.run(host='0.0.0.0', port=5000, debug=False)
