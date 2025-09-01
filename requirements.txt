@@ -1,0 +1,31 @@
+# 🚀 Production-Grade Cattle Detection System
+# 현대적이고 효율적인 AI 라이브러리들
+
+# 🔥 Core AI/ML Libraries
+ultralytics>=8.2.0          # 최신 YOLOv8/v9 - 로컬 고성능 모델
+torch>=2.0.0                # PyTorch 2.0+ - GPU 최적화
+torchvision>=0.15.0         # Computer Vision utilities
+onnxruntime-gpu>=1.16.0     # ONNX Runtime - 초고속 추론
+
+# 📹 Computer Vision & Video Processing  
+opencv-python>=4.8.0        # OpenCV - 영상 처리
+Pillow>=10.0.0              # 이미지 처리
+numpy>=1.24.0               # 수치 연산
+
+# ⚡ Performance & Optimization
+numba>=0.58.0               # JIT 컴파일러 - 성능 부스터
+psutil>=5.9.0               # 시스템 리소스 모니터링
+
+# 📊 Data & Visualization
+matplotlib>=3.7.0           # 시각화
+seaborn>=0.12.0             # 고급 시각화
+pandas>=2.0.0               # 데이터 분석
+
+# 🔧 Utilities
+python-dotenv>=1.0.0        # 환경변수 관리
+rich>=13.0.0                # 아름다운 콘솔 출력
+tqdm>=4.65.0                # 진행률 표시
+
+# 📱 Optional: Real-time Streaming
+# streamlit>=1.28.0         # 웹 대시보드 (필요시)
+# fastapi>=0.104.0          # API 서버 (필요시)
